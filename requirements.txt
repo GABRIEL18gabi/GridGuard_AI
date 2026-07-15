@@ -6,7 +6,7 @@ joblib
 plotly
 reportlab
 Pillow
-requests
 folium
 streamlit-folium
 streamlit-autorefresh
+requests

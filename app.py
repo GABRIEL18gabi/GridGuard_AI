@@ -496,15 +496,15 @@ if menu == "🏠 Dashboard":
         # =====================================
 
         pdf = generate_pdf(
-                voltage=voltage,
-                current=current,
-                frequency=frequency,
-                temperature=temperature,
-                fault=fault,
-                confidence=confidence,
-                health=health
-            )
-
+            voltage,
+            current,
+            frequency,
+            temperature,
+            fault,
+            confidence,
+            health,
+            shutdown
+)
         with open(pdf, "rb") as file:
                 st.download_button(
                     label="📄 Download PDF Report",

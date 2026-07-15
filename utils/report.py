@@ -1,201 +1,214 @@
-from reportlab.lib import colors
+from datetime import datetime
+
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import (
     SimpleDocTemplate,
-    Table,
-    TableStyle,
     Paragraph,
-    Spacer
+    Spacer,
+    PageBreak
 )
-from datetime import datetime
-from reportlab.platypus import Image
-import os
 
+from utils.pdf_cover import create_cover_page
+from utils.pdf_contents import create_contents_page
+from utils.pdf_dashboard import create_dashboard
+from utils.pdf_summary import create_summary_page
+from utils.pdf_sensor_table import create_sensor_table
+from utils.pdf_ai import create_ai_section
+from utils.pdf_network import create_network_pages
+from utils.pdf_analysis import create_analysis_pages
+from utils.pdf_verification import create_verification_page
+from utils.pdf_qrcode import create_qr
+from utils.pdf_footer import create_footer, add_footer
 
-def generate_pdf(voltage, current, frequency, temperature, fault, confidence, health):
+# ==========================================
+# MAIN PDF FUNCTION
+# ==========================================
 
-    # -------------------------------
-    # Create PDF File
-    # -------------------------------
-    filename = f"GridGuard_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+def generate_pdf(
+    voltage,
+    current,
+    frequency,
+    temperature,
+    fault,
+    confidence,
+    health,
+    shutdown
+):
 
-    doc = SimpleDocTemplate(filename)
+    filename = (
+        "GridGuard_Report_" +
+        datetime.now().strftime("%Y%m%d_%H%M%S") +
+        ".pdf"
+    )
+
+    doc = SimpleDocTemplate(
+        filename,
+        leftMargin=30,
+        rightMargin=30,
+        topMargin=35,
+        bottomMargin=30
+    )
 
     styles = getSampleStyleSheet()
 
     elements = []
 
-    # -------------------------------
-    # Report ID
-    # -------------------------------
-    report_id = "GG-" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    # -------------------------------
-    # Header
-    # -------------------------------
-    title = Paragraph(
-        "<font color='darkblue'><b><font size=22>⚡ GRIDGUARD AI</font></b></font>",
-        styles["Title"]
+    report_id = datetime.now().strftime(
+        "GG-%Y%m%d-%H%M%S"
     )
 
-    subtitle = Paragraph(
-        "<b>Smart Grid Fault Detection Report</b>",
-        styles["Heading2"]
+    # =====================================
+    # Cover Page
+    # =====================================
+
+    create_cover_page(
+        elements,
+        report_id,
+        fault,
+        confidence,
+        health,
+        shutdown
     )
 
-    info = Paragraph(
-        f"""
-        <b>Report ID:</b> {report_id}<br/>
-        <b>Generated:</b> {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}
-        """,
-        styles["Normal"]
+    elements.append(PageBreak())
+
+    # =====================================
+# Table of Contents
+# =====================================
+
+    create_contents_page(elements)
+
+    elements.append(PageBreak())
+
+# =====================================
+# Executive Dashboard
+# =====================================
+
+    create_dashboard(
+        elements,
+        fault,
+        confidence,
+        health,
+        shutdown
     )
 
-    # -------------------------------
-# GridGuard AI Logo
-# -------------------------------
+    elements.append(PageBreak())
 
-    if os.path.exists("assets/logo.png"):
+# =====================================
+# Executive Summary
+# =====================================
 
-        logo = Image(
-            "assets/logo.png",
-            width=80,
-            height=80
-        )
+    create_summary_page(
+        elements,
+        voltage,
+        current,
+        frequency,
+        temperature,
+        fault,
+        confidence,
+        health,
+        shutdown
+    )
 
-        elements.append(logo)
+    elements.append(PageBreak())
+    # =====================================
+# Sensor Data Analysis
+# =====================================
 
-    elements.append(title)
-    elements.append(subtitle)
-    elements.append(info)
-    elements.append(Spacer(1, 20))
-
-    # -------------------------------
-    # Sensor Data Table
-    # -------------------------------
-    data = [
-        ["Parameter", "Value"],
-        ["Voltage (V)", voltage],
-        ["Current (A)", current],
-        ["Frequency (Hz)", frequency],
-        ["Temperature (°C)", temperature],
-        ["Detected Fault", fault],
-        ["AI Confidence", f"{confidence:.2f}%"],
-        ["Grid Health", f"{health}%"],
-    ]
-
-    table = Table(data, colWidths=[200, 200])
-
-    table.setStyle(TableStyle([
-
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0B5394")),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-
-        ('BACKGROUND', (0, 1), (0, -1), colors.HexColor("#D9EAF7")),
-
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-
-        ('FONTSIZE', (0, 0), (-1, -1), 11),
-
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    elements.append(table)
-
-    elements.append(Spacer(1, 20))
-
-# -------------------------------
-# AI Prediction
-# -------------------------------
-
-    elements.append(
-    Paragraph("<b>AI Prediction</b>", styles["Heading2"])
-)
-
-    prediction = f"""
-<b>Predicted Fault:</b> {fault}<br/>
-<b>Prediction Confidence:</b> {confidence:.2f}%<br/>
-<b>Grid Health:</b> {health}%<br/>
-"""
-
-    elements.append(
-    Paragraph(prediction, styles["BodyText"])
-)
+    create_sensor_table(
+        elements,
+        voltage,
+        current,
+        frequency,
+        temperature,
+        fault,
+        confidence,
+        health
+    )
 
     elements.append(Spacer(1,20))
 
-# -------------------------------
-# AI Recommendation
-# -------------------------------
-   
 
-   # -------------------------------
-# Grid Status
-# -------------------------------
+    # =====================================
+# AI Analysis
+# =====================================
 
-    elements.append(
-    Paragraph("<b>Grid Status</b>", styles["Heading2"])
+    create_ai_section(
+    elements,
+    fault,
+    confidence,
+    health,
+    shutdown
 )
 
-    if health >= 80:
-        status_text = "<font color='green'><b>🟢 GRID OPERATING NORMALLY</b></font>"
-    else:
-        status_text = "<font color='red'><b>🔴 EMERGENCY SHUTDOWN RECOMMENDED</b></font>"
+    elements.append(PageBreak())
 
-    elements.append(
-    Paragraph(status_text, styles["Heading2"])
+    # =====================================
+# GIS + SCADA
+# =====================================
+
+    create_network_pages(
+    elements,
+    fault
 )
 
-    elements.append(Spacer(1,20))
+    elements.append(PageBreak())
 
-    # -------------------------------
-# GIS Map Snapshot
-# -------------------------------
+    # =====================================
+# Analysis
+# =====================================
+
+    create_analysis_pages(
+    elements,
+    voltage,
+    current,
+    frequency,
+    temperature
+)
+
+    elements.append(PageBreak())
+
+    # =====================================
+# QR CODE
+# =====================================
 
     elements.append(
-        Paragraph("<b>GIS Disaster Intelligence Map</b>", styles["Heading2"])
+    Paragraph(
+        "<font size=18 color='#003366'><b>Application QR Code</b></font>",
+        styles["Heading1"]
+    )
+)
+
+    elements.append(Spacer(1,10))
+
+    create_qr(elements)
+
+    elements.append(PageBreak())
+
+# =====================================
+# Verification
+# =====================================
+
+    create_verification_page(
+    elements,
+    report_id
+)
+
+    elements.append(PageBreak())
+
+    # =====================================
+# Footer
+# =====================================
+
+    create_footer(
+    elements,
+    report_id
     )
 
-    elements.append(Spacer(1, 10))
-
-    if os.path.exists("assets/gis_snapshot.png"):
-
-        img = Image(
-            "assets/gis_snapshot.png",
-            width=450,
-            height=300
-        )
-
-        elements.append(img)
-
-    elements.append(Spacer(1, 20))
-
-    
-
-    # -------------------------------
-    # Footer
-    # -------------------------------
-    footer = Paragraph(
-        f"""
-        <hr/>
-        <b>Generated by GridGuard AI</b><br/>
-        AI-Based LT Line Fault Detection & Automatic Emergency Shutdown<br/><br/>
-
-        Report Generated:
-        {datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
-        """,
-        styles["Normal"]
-    )
-
-    elements.append(footer)
-    # -------------------------------
-    # Build PDF
-    # -------------------------------
-    doc.build(elements)
+    doc.build(
+    elements,
+    onFirstPage=add_footer,
+    onLaterPages=add_footer
+)
 
     return filename

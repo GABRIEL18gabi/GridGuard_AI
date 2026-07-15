@@ -249,19 +249,10 @@ def show_plotly_map():
 """)
     left, right = st.columns([3, 1]) 
     with left:
-        fig.write_image(
-        "assets/gis_snapshot.png",
-        width=1400,
-        height=800
-)
-        fig.write_image(
-            "assets/gis_snapshot.png",
-            width=1400,
-            height=800
-        )
+        st.session_state["gis_fig"] = fig
         st.plotly_chart(
-        fig,
-        use_container_width=True
+            fig,
+            use_container_width=True
     )
     status = get_live_status()
 

@@ -1,12 +1,7 @@
+*.pdf
+history.csv
 __pycache__/
 *.pyc
-
-*.pdf
-
-history.csv
-
 .env
-
 .vscode/
-
 .idea/
